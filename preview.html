@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HYQP — Hybrid Query Protocol</title>
+<meta name="description" content="HYQP (Hybrid Query Protocol) — a lightweight publish/subscribe broker for IoT with regex topic routing, JSON Schema governance, payload predicates, topic discovery and multi-format payloads. Java 21 virtual threads, zero dependencies." />
+<style>
+  :root{
+    --bg0:#050505; --bg1:#0b1f3a; --accent:#1e90ff; --accent2:#56b3ff;
+    --card:#0f2747; --card2:#0c1f38; --line:#1d3a5f; --txt:#eaf2ff; --mut:#9fb6d4;
+    --ok:#33d17a; --warn:#ffb454; --code:#0a1626;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; font-family:"Times New Roman", Times, Georgia, serif;
+    background:linear-gradient(135deg,var(--bg0),var(--bg1)); background-attachment:fixed;
+    color:var(--txt); line-height:1.65;
+  }
+  a{color:var(--accent2); text-decoration:none}
+  a:hover{text-decoration:underline}
+  code,pre{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace}
+  header{
+    position:sticky; top:0; z-index:50; backdrop-filter:blur(8px);
+    background:rgba(5,8,18,.72); border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between; padding:14px 5vw;
+  }
+  .logo{font-size:26px; font-weight:800; color:var(--accent); letter-spacing:1px}
+  .logo small{color:var(--mut); font-size:12px; font-weight:600; display:block; letter-spacing:.5px}
+  nav{display:flex; flex-wrap:wrap; gap:4px}
+  nav a{color:var(--txt); font-weight:600; font-size:14px; padding:8px 12px; border-radius:8px}
+  nav a:hover,nav a.active{background:var(--accent); color:#fff; text-decoration:none}
+  .menu-btn{display:none; background:none; border:1px solid var(--line); color:var(--txt); font-size:20px; border-radius:8px; padding:6px 10px; cursor:pointer}
+  main{max-width:1080px; margin:0 auto; padding:36px 5vw 80px}
+  .view{display:none; animation:fade .35s ease}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0; transform:translateY(8px)}to{opacity:1; transform:none}}
+  h1{font-size:40px; line-height:1.15; margin:0 0 14px}
+  h2{font-size:28px; margin:34px 0 12px; color:#fff}
+  h3{font-size:20px; margin:24px 0 8px; color:var(--accent2)}
+  p{color:var(--txt)} .mut{color:var(--mut)}
+  .lead{font-size:19px; color:var(--mut); max-width:760px}
+  .hero{padding:40px 0 10px}
+  .badges{display:flex; flex-wrap:wrap; gap:10px; margin:18px 0}
+  .badge{background:var(--card); border:1px solid var(--line); border-radius:999px; padding:6px 14px; font-size:13px; color:var(--mut)}
+  .cta{display:flex; flex-wrap:wrap; gap:12px; margin-top:22px}
+  .btn{background:var(--accent); color:#fff; padding:12px 22px; border-radius:10px; font-weight:700; border:none; cursor:pointer; font-size:15px}
+  .btn.ghost{background:transparent; border:1px solid var(--accent); color:var(--accent2)}
+  .btn:hover{filter:brightness(1.1); text-decoration:none}
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; margin:22px 0}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px}
+  .card h3{margin-top:0}
+  .card .ic{font-size:24px}
+  pre{background:var(--code); border:1px solid var(--line); border-radius:10px; padding:16px 18px; overflow:auto; position:relative; font-size:13.5px}
+  pre code{color:#d6e6ff}
+  .cmt{color:#6f8db0}
+  .kw{color:#ff9e64} .str{color:#9ece6a} .verb{color:#7dcfff; font-weight:700}
+  .copy{position:absolute; top:8px; right:8px; background:#13325b; border:1px solid var(--line); color:var(--mut); font-size:11px; border-radius:6px; padding:3px 8px; cursor:pointer}
+  .copy:hover{color:#fff}
+  table{width:100%; border-collapse:collapse; margin:16px 0; font-size:14px}
+  th,td{border:1px solid var(--line); padding:9px 12px; text-align:left; vertical-align:top}
+  th{background:var(--card2); color:var(--accent2)}
+  td code{color:#ffd9a0}
+  .note{border-left:3px solid var(--accent); background:var(--card2); padding:12px 16px; border-radius:0 10px 10px 0; margin:16px 0}
+  .ok{border-left-color:var(--ok)} .warn{border-left-color:var(--warn)}
+  .steps{counter-reset:s; padding-left:0; list-style:none}
+  .steps li{position:relative; padding:8px 0 8px 44px; border-bottom:1px solid var(--line)}
+  .steps li:before{counter-increment:s; content:counter(s); position:absolute; left:0; top:8px; width:28px; height:28px; border-radius:50%; background:var(--accent); color:#fff; text-align:center; line-height:28px; font-weight:700}
+  footer{border-top:1px solid var(--line); padding:28px 5vw; color:var(--mut); text-align:center; font-size:13px}
+  .pill{display:inline-block; background:var(--accent); color:#fff; border-radius:6px; font-size:11px; padding:1px 7px; font-weight:700; vertical-align:middle}
+  @media (max-width:780px){
+    nav{position:absolute; top:60px; right:5vw; left:5vw; flex-direction:column; background:#091428; border:1px solid var(--line); border-radius:12px; padding:8px; display:none}
+    nav.open{display:flex}
+    .menu-btn{display:block}
+    h1{font-size:32px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">HYQP<small>Hybrid Query Protocol</small></div>
+  <button class="menu-btn" onclick="document.getElementById('nav').classList.toggle('open')">&#9776;</button>
+  <nav id="nav">
+    <a href="#home">Home</a>
+    <a href="#quickstart">Quick Start</a>
+    <a href="#protocol">Protocol</a>
+    <a href="#tutorials">Tutorials</a>
+    <a href="#python">Python SDK</a>
+    <a href="#arduino">Arduino/ESP32</a>
+    <a href="#iot">IoT Wiring</a>
+    <a href="#scenarios">Scenarios</a>
+    <a href="#docker">Docker</a>
+    <a href="#download">Download</a>
+  </nav>
+</header>
+
+<main>
+
+<!-- ============================ HOME ============================ -->
+<section id="home" class="view">
+  <div class="hero">
+    <h1>The pub/sub broker that filters, governs and discovers &mdash; <span style="color:var(--accent)">at the wire level</span>.</h1>
+    <p class="lead">HYQP is a lightweight publish/subscribe protocol and broker for the Internet of Things. It adds regex topic routing, broker-side JSON Schema validation, value-based payload predicates, topic ownership &amp; discovery, and multi-format payloads &mdash; over a simple, human-readable TCP text protocol. Built on Java&nbsp;21 virtual threads with <b>zero dependencies</b>.</p>
+    <div class="badges">
+      <span class="badge">Java 21 &middot; virtual threads</span>
+      <span class="badge">Zero dependencies</span>
+      <span class="badge">Text protocol over TCP</span>
+      <span class="badge">QoS 0 / 1 / 2</span>
+      <span class="badge">Docker: <code>78549/hyqp:v2.0</code></span>
+    </div>
+    <div class="cta">
+      <a class="btn" href="#quickstart">Get started</a>
+      <a class="btn ghost" href="#docker">Pull the image</a>
+      <a class="btn ghost" href="https://hub.docker.com/r/78549/hyqp" target="_blank" rel="noopener">Docker Hub &#8599;</a>
+    </div>
+    <p class="mut" style="margin-top:20px">Protocol &amp; reference implementation designed by <b>Dr. Badr El Khalyly</b>.</p>
+  </div>
+
+  <h2>Why HYQP?</h2>
+  <div class="grid">
+    <div class="card"><h3>Semantic filtering</h3><p class="mut">Subscribers receive only the messages they want, selected by value with ten operators &mdash; the broker evaluates the predicate before any byte hits the wire.</p></div>
+    <div class="card"><h3>Regex routing</h3><p class="mut">Topic segments can be Java regular expressions, usable <i>symmetrically</i> in SUBSCRIBE and PUBLISH. One publish reaches a value-defined set of topics.</p></div>
+    <div class="card"><h3>Schema governance</h3><p class="mut">Attach a JSON Schema to a topic; the broker rejects malformed payloads at ingress, before any fan-out.</p></div>
+    <div class="card"><h3>Ownership &amp; discovery <span class="pill">v2.0</span></h3><p class="mut">Every topic has an owner. Query the owner, publishers, subscribers and metadata at runtime &mdash; no external registry.</p></div>
+    <div class="card"><h3>Multi-format payloads <span class="pill">v2.0</span></h3><p class="mut">Carry JSON, text, XML and binary (octet/PDF, base64-framed) on one hierarchy, with per-topic content typing.</p></div>
+    <div class="card"><h3>Virtual-thread scale</h3><p class="mut">One Java 21 virtual thread per connection &mdash; thousands of clients, ~80&nbsp;MB resident, zero message loss in every benchmark.</p></div>
+  </div>
+
+  <div class="note ok"><b>TL;DR</b> &mdash; Run the broker with one Docker command, then build publishers and subscribers with the Python or Arduino/ESP32 SDK. <a href="#quickstart">Start here &#8594;</a></div>
+</section>
+
+<!-- ============================ QUICK START ============================ -->
+<section id="quickstart" class="view">
+  <h1>Quick Start</h1>
+  <p class="lead">Run the broker, then connect a subscriber and a publisher. Three terminals, five minutes.</p>
+
+  <h2>1 &middot; Run the broker</h2>
+  <p>With Docker (no JDK needed):</p>
+  <pre><code><span class="cmt"># Pull and run the broker (TCP 4444, state persisted in a volume)</span>
+docker pull 78549/hyqp:v2.0
+docker run -d --name hyqp -p 4444:4444 -v hyqp-data:/app/data 78549/hyqp:v2.0</code></pre>
+  <p>Or from source (Java 21):</p>
+  <pre><code>javac -d target/classes $(find src/main/java -name "*.java")
+java -cp target/classes com.hyqp.broker.BrokerMain   <span class="cmt"># default port 4444</span></code></pre>
+
+  <h2>2 &middot; Subscribe (only hot readings)</h2>
+  <pre><code>java -cp target/classes com.hyqp.broker.client.Subscriber dash sensors/temp '{"value":{"$gt":30}}'</code></pre>
+
+  <h2>3 &middot; Publish</h2>
+  <pre><code>java -cp target/classes com.hyqp.broker.client.Publisher sensor-1
+&gt; CREATE sensors/temp {"type":"object","required":["value"],
+    "properties":{"value":{"type":"number","minimum":-50,"maximum":100}}}
+&gt; PUBLISH sensors/temp {"value":22}    <span class="cmt"># not delivered (22 &lt;= 30)</span>
+&gt; PUBLISH sensors/temp {"value":75}    <span class="cmt"># delivered to dash</span>
+&gt; PUBLISH sensors/temp {"value":200}   <span class="cmt"># ERROR: exceeds schema maximum 100</span></code></pre>
+
+  <div class="note">You can drive the broker by hand with <code>telnet localhost 4444</code> &mdash; the protocol is plain text.</div>
+</section>
+
+<!-- ============================ PROTOCOL ============================ -->
+<section id="protocol" class="view">
+  <h1>Protocol Reference</h1>
+  <p class="lead">Every frame is a single UTF-8 line terminated by <code>\n</code>, over a long-lived TCP connection.</p>
+
+  <h2>Client &#8594; Broker</h2>
+  <table>
+    <tr><th>Command</th><th>Syntax</th></tr>
+    <tr><td>CONNECT</td><td><code>CONNECT &lt;client&gt; [PERSISTENT]</code></td></tr>
+    <tr><td>CREATE</td><td><code>CREATE &lt;topic&gt; [&lt;schema-json&gt;]</code></td></tr>
+    <tr><td>SUBSCRIBE</td><td><code>SUBSCRIBE &lt;topic&gt; [FILTER &lt;predicate-json&gt;]</code></td></tr>
+    <tr><td>UNSUBSCRIBE</td><td><code>UNSUBSCRIBE &lt;topic&gt;</code></td></tr>
+    <tr><td>PUBLISH</td><td><code>PUBLISH [RETAIN] [QOS0|QOS1|QOS2] [TYPE &lt;ct&gt;] &lt;topic&gt; &lt;payload&gt;</code></td></tr>
+    <tr><td>DISCONNECT</td><td><code>DISCONNECT</code></td></tr>
+    <tr><td>QoS acks</td><td><code>PUBACK | PUBREC | PUBREL | PUBCOMP &lt;messageId&gt;</code></td></tr>
+    <tr><td>OWNER <span class="pill">v2.0</span></td><td><code>OWNER &lt;topic&gt;</code></td></tr>
+    <tr><td>PUBLISHERS <span class="pill">v2.0</span></td><td><code>PUBLISHERS &lt;topic&gt;</code></td></tr>
+    <tr><td>SUBSCRIBERS <span class="pill">v2.0</span></td><td><code>SUBSCRIBERS &lt;topic&gt;</code></td></tr>
+    <tr><td>DESCRIBE <span class="pill">v2.0</span></td><td><code>DESCRIBE &lt;topic&gt;</code></td></tr>
+    <tr><td>LIST <span class="pill">v2.0</span></td><td><code>LIST [prefix]</code></td></tr>
+  </table>
+
+  <h2>Topic matching</h2>
+  <table>
+    <tr><th>Segment</th><th>Matches</th></tr>
+    <tr><td><code>literal</code></td><td>exactly that string</td></tr>
+    <tr><td><code>+</code></td><td>exactly one arbitrary segment</td></tr>
+    <tr><td><code>#</code></td><td>zero or more trailing segments (last only)</td></tr>
+    <tr><td><code>regex('pattern')</code></td><td>one segment matching a Java regex</td></tr>
+  </table>
+
+  <h2>Payload predicate operators</h2>
+  <table>
+    <tr><th>Operator</th><th>Meaning</th><th>Operator</th><th>Meaning</th></tr>
+    <tr><td><code>$eq</code></td><td>equals</td><td><code>$in</code></td><td>in list</td></tr>
+    <tr><td><code>$neq</code></td><td>not equal</td><td><code>$nin</code></td><td>not in list</td></tr>
+    <tr><td><code>$gt</code> / <code>$gte</code></td><td>greater (or equal)</td><td><code>$contains</code></td><td>substring</td></tr>
+    <tr><td><code>$lt</code> / <code>$lte</code></td><td>less (or equal)</td><td><code>$regex</code></td><td>pattern match</td></tr>
+  </table>
+
+  <h2>Content types <span class="pill">v2.0</span></h2>
+  <table>
+    <tr><th>TYPE</th><th>Wire framing</th></tr>
+    <tr><td><code>json</code> (default)</td><td>verbatim JSON &mdash; validated if the topic has a schema</td></tr>
+    <tr><td><code>text</code> / <code>xml</code></td><td>verbatim UTF-8 line</td></tr>
+    <tr><td><code>octet</code> / <code>pdf</code></td><td>base64 of raw bytes (rejected on a schema-governed topic)</td></tr>
+  </table>
+</section>
+
+<!-- ============================ TUTORIALS ============================ -->
+<section id="tutorials" class="view">
+  <h1>Tutorials</h1>
+  <p class="lead">Short, focused walkthroughs of each HYQP capability.</p>
+
+  <h2>Regex topic routing</h2>
+  <p>Subscribe to every numbered production line at once, ignoring non-numeric zones:</p>
+  <pre><code><span class="verb">SUBSCRIBE</span> factory/regex('line-[0-9]+')/temp
+<span class="cmt"># matches factory/line-1/temp, factory/line-42/temp -- NOT factory/zone-A/temp</span></code></pre>
+
+  <h2>One command to many topics (symmetric publish)</h2>
+  <pre><code><span class="verb">PUBLISH</span> factory/regex('line-[0-9]+')/control {"cmd":"recalibrate"}
+<span class="cmt"># the broker expands the pattern and delivers to every matching concrete topic</span></code></pre>
+
+  <h2>Schema governance</h2>
+  <pre><code><span class="verb">CREATE</span> sensors/temp {"type":"object","required":["value"],
+  "properties":{"value":{"type":"number","minimum":-50,"maximum":100}}}
+<span class="cmt"># a later PUBLISH of {"value":150} is rejected before any subscriber sees it</span></code></pre>
+
+  <h2>Dynamic filter (no reconnect)</h2>
+  <pre><code><span class="verb">SUBSCRIBE</span> sensors/temp FILTER {"value":{"$gt":50}}   <span class="cmt"># set</span>
+<span class="verb">SUBSCRIBE</span> sensors/temp FILTER {"value":{"$gt":90}}   <span class="cmt"># tighten, same connection</span>
+<span class="verb">SUBSCRIBE</span> sensors/temp                              <span class="cmt"># remove filter</span></code></pre>
+
+  <h2>Governance &amp; discovery <span class="pill">v2.0</span></h2>
+  <pre><code><span class="verb">OWNER</span> sensors/temp          <span class="cmt"># -&gt; OK Owner of sensors/temp: admin</span>
+<span class="verb">PUBLISHERS</span> sensors/temp     <span class="cmt"># -&gt; OK Publishers of sensors/temp: sensor-1</span>
+<span class="verb">SUBSCRIBERS</span> sensors/temp    <span class="cmt"># -&gt; OK Subscribers of sensors/temp: dash</span>
+<span class="verb">DESCRIBE</span> sensors/temp       <span class="cmt"># -&gt; OK Topic ... | owner=admin | schema=yes | ...</span>
+<span class="verb">LIST</span> sensors/               <span class="cmt"># -&gt; OK Topics: sensors/humidity, sensors/temp</span></code></pre>
+
+  <h2>Multi-format payloads <span class="pill">v2.0</span></h2>
+  <pre><code><span class="verb">PUBLISH</span> TYPE xml   sensors/cfg     &lt;cfg rate="5s"/&gt;
+<span class="verb">PUBLISH</span> RETAIN TYPE octet line-1/firmware  iVBORw0KGgo...   <span class="cmt"># base64 bytes</span>
+<span class="verb">PUBLISH</span>           sensors/temp    {"value":22.5}              <span class="cmt"># json (default)</span></code></pre>
+
+  <hr style="border-color:var(--line); margin:36px 0">
+  <h2 id="t-matching">Tutorial 1 &mdash; Topic model &amp; matching, in depth</h2>
+  <p>A topic is a slash-separated path. A <i>filter</i> (used in SUBSCRIBE and in wildcard PUBLISH) may mix four kinds of segment. The table shows what each filter matches against a set of concrete topics.</p>
+  <table>
+    <tr><th>Filter</th><th>Matches</th><th>Does NOT match</th></tr>
+    <tr><td><code>sensors/temp</code></td><td><code>sensors/temp</code></td><td><code>sensors/temp/in</code>, <code>sensors/hum</code></td></tr>
+    <tr><td><code>sensors/+</code></td><td><code>sensors/temp</code>, <code>sensors/hum</code></td><td><code>sensors/temp/in</code> (two levels)</td></tr>
+    <tr><td><code>sensors/#</code></td><td><code>sensors</code>, <code>sensors/temp</code>, <code>sensors/temp/in</code></td><td><code>other/x</code></td></tr>
+    <tr><td><code>+/temp/+</code></td><td><code>home/temp/living</code></td><td><code>home/temp</code> (missing 3rd level)</td></tr>
+    <tr><td><code>factory/regex('line-[0-9]+')/temp</code></td><td><code>factory/line-1/temp</code>, <code>factory/line-42/temp</code></td><td><code>factory/zone-A/temp</code></td></tr>
+    <tr><td><code>regex('b-[0-9]+')/regex('f-[0-9]+')/t</code></td><td><code>b-5/f-12/t</code></td><td><code>b-5/lobby/t</code></td></tr>
+  </table>
+  <div class="note">Literal-only filters match exactly like MQTT, so existing MQTT topic conventions keep working; regex segments are a strict, additive extension.</div>
+
+  <h2 id="t-predicates">Tutorial 2 &mdash; The ten payload operators, by example</h2>
+  <p>A predicate is a JSON object: each field maps to one or more operators; all conditions are ANDed. The broker evaluates it before delivery, so non-matching messages never reach the subscriber. Each row shows a filter, a payload, and whether it is delivered.</p>
+  <table>
+    <tr><th>Filter clause</th><th>Payload</th><th>Delivered?</th></tr>
+    <tr><td><code>{"unit":{"$eq":"celsius"}}</code></td><td><code>{"unit":"celsius"}</code></td><td>yes</td></tr>
+    <tr><td><code>{"unit":"celsius"}</code> (shorthand $eq)</td><td><code>{"unit":"fahrenheit"}</code></td><td>no</td></tr>
+    <tr><td><code>{"state":{"$neq":"ok"}}</code></td><td><code>{"state":"alarm"}</code></td><td>yes</td></tr>
+    <tr><td><code>{"v":{"$gt":30}}</code></td><td><code>{"v":30}</code></td><td>no (strict)</td></tr>
+    <tr><td><code>{"v":{"$gte":30,"$lt":80}}</code></td><td><code>{"v":30}</code></td><td>yes</td></tr>
+    <tr><td><code>{"v":{"$lte":80}}</code></td><td><code>{"v":80}</code></td><td>yes</td></tr>
+    <tr><td><code>{"zone":{"$in":["A","B"]}}</code></td><td><code>{"zone":"B"}</code></td><td>yes</td></tr>
+    <tr><td><code>{"zone":{"$nin":["X"]}}</code></td><td><code>{"zone":"X"}</code></td><td>no</td></tr>
+    <tr><td><code>{"msg":{"$contains":"alarm"}}</code></td><td><code>{"msg":"alarm-high"}</code></td><td>yes</td></tr>
+    <tr><td><code>{"id":{"$regex":"S[0-9]+"}}</code></td><td><code>{"id":"S42"}</code></td><td>yes</td></tr>
+  </table>
+  <p>Combine conditions across fields (logical AND). There is no explicit OR &mdash; express it as two subscriptions on the same topic:</p>
+  <pre><code><span class="verb">SUBSCRIBE</span> sensors/temp FILTER {"value":{"$gt":20,"$lt":80},"unit":{"$eq":"celsius"}}
+<span class="cmt"># OR (value&gt;90) OR (value&lt;0): two subscriptions</span>
+<span class="verb">SUBSCRIBE</span> sensors/temp FILTER {"value":{"$gt":90}}
+<span class="verb">SUBSCRIBE</span> sensors/temp FILTER {"value":{"$lt":0}}</code></pre>
+
+  <h2 id="t-schema">Tutorial 3 &mdash; Schema governance, every constraint</h2>
+  <p>A schema is attached at CREATE time and enforced on every PUBLISH, before fan-out. Supported constraints: <code>type</code>, <code>required</code>, nested <code>properties</code>, <code>minimum</code>/<code>maximum</code>, <code>minLength</code>/<code>maxLength</code>, <code>enum</code>, and <code>items</code>.</p>
+  <pre><code><span class="verb">CREATE</span> sensors/temp {"type":"object","required":["value"],
+  "properties":{
+    "value":{"type":"number","minimum":-50,"maximum":100},
+    "unit" :{"type":"string","enum":["celsius","fahrenheit"]},
+    "tags" :{"type":"array","items":{"type":"string","minLength":1}}
+  }}</code></pre>
+  <table>
+    <tr><th>Payload</th><th>Result</th><th>Reason</th></tr>
+    <tr><td><code>{"value":22.5,"unit":"celsius"}</code></td><td>accepted</td><td>all constraints met</td></tr>
+    <tr><td><code>{"unit":"celsius"}</code></td><td>ERROR</td><td>missing required <code>value</code></td></tr>
+    <tr><td><code>{"value":150}</code></td><td>ERROR</td><td>exceeds <code>maximum</code> 100</td></tr>
+    <tr><td><code>{"value":"hot"}</code></td><td>ERROR</td><td><code>value</code> is not a number</td></tr>
+    <tr><td><code>{"value":22,"unit":"kelvin"}</code></td><td>ERROR</td><td><code>unit</code> not in <code>enum</code></td></tr>
+  </table>
+  <pre><code><span class="cmt"># On rejection the publisher gets a descriptive error:</span>
+ERROR Schema validation failed: $.value: value 150.0 exceeds maximum 100.0</code></pre>
+  <div class="note warn">A schema is immutable once set, and a schema-governed topic only accepts <code>json</code> payloads &mdash; a <code>TYPE xml/octet</code> publish to it is rejected.</div>
+
+  <h2 id="t-qos">Tutorial 4 &mdash; Quality of Service flows</h2>
+  <h3>QoS 0 &mdash; at most once (fire-and-forget)</h3>
+  <pre><code><span class="verb">PUBLISH</span> sensors/temp {"value":22}
+<span class="cmt"># subscriber gets:  MESSAGE sensors/temp {"value":22}</span></code></pre>
+  <h3>QoS 1 &mdash; at least once (PUBACK)</h3>
+  <pre><code><span class="verb">PUBLISH</span> QOS1 sensors/temp {"value":22}
+<span class="cmt"># broker -&gt; subscriber:  MESSAGE 7 QOS1 sensors/temp {"value":22}</span>
+<span class="cmt"># subscriber -&gt; broker:  PUBACK 7</span>
+<span class="cmt"># 10s retransmit window, up to 3 retries if no PUBACK</span></code></pre>
+  <h3>QoS 2 &mdash; exactly once (4-step handshake)</h3>
+  <pre><code><span class="verb">PUBLISH</span> QOS2 sensors/temp {"value":22}
+<span class="cmt"># broker -&gt; sub:  MESSAGE 8 QOS2 sensors/temp {"value":22}</span>
+<span class="cmt"># sub   -&gt; broker: PUBREC 8</span>
+<span class="cmt"># broker -&gt; sub:  PUBREL 8</span>
+<span class="cmt"># sub   -&gt; broker: PUBCOMP 8   (delivered exactly once)</span></code></pre>
+
+  <h2 id="t-retained">Tutorial 5 &mdash; Retained messages</h2>
+  <pre><code><span class="verb">PUBLISH</span> RETAIN sensors/temp {"value":22}     <span class="cmt"># stored as last-known value</span>
+<span class="cmt"># any LATER subscriber receives it immediately on subscribe:</span>
+<span class="verb">SUBSCRIBE</span> sensors/temp                       <span class="cmt"># -&gt; MESSAGE sensors/temp {"value":22}</span>
+<span class="verb">PUBLISH</span> RETAIN sensors/temp                   <span class="cmt"># empty body clears the retained value</span></code></pre>
+  <div class="note">Retained messages survive broker restarts (flushed to <code>data/retained/</code>) and compose with any QoS level and with payload predicates.</div>
+
+  <h2 id="t-sessions">Tutorial 6 &mdash; Persistent sessions</h2>
+  <pre><code><span class="verb">CONNECT</span> edge-1 PERSISTENT
+<span class="verb">SUBSCRIBE</span> factory/line-1/temp FILTER {"celsius":{"$gt":50}}
+<span class="verb">DISCONNECT</span>
+<span class="cmt"># ...later, the same client reconnects:</span>
+<span class="verb">CONNECT</span> edge-1 PERSISTENT
+<span class="cmt"># -&gt; OK Connected as edge-1 (session restored)  -- subscriptions & filters are back</span></code></pre>
+
+  <h2 id="t-discovery">Tutorial 7 &mdash; Governance &amp; discovery, every verb <span class="pill">v2.0</span></h2>
+  <pre><code><span class="verb">CREATE</span> sensors/temp {...schema...}    <span class="cmt"># caller becomes the owner</span>
+<span class="verb">OWNER</span> sensors/temp                    <span class="cmt"># -&gt; OK Owner of sensors/temp: admin</span>
+<span class="verb">PUBLISHERS</span> sensors/temp               <span class="cmt"># -&gt; OK Publishers of sensors/temp: sensor-1, sensor-2</span>
+<span class="verb">SUBSCRIBERS</span> sensors/temp              <span class="cmt"># -&gt; OK Subscribers of sensors/temp: dash, alarm</span>
+<span class="verb">DESCRIBE</span> sensors/temp                 <span class="cmt"># -&gt; OK Topic sensors/temp | owner=admin | created=... | schema=yes | contentType=json | publishers=2 | subscribers=2</span>
+<span class="verb">LIST</span> sensors/                         <span class="cmt"># -&gt; OK Topics: sensors/humidity, sensors/temp</span></code></pre>
+  <div class="note">A topic implicitly created by an early SUBSCRIBE is unowned; a later CREATE may <i>claim</i> it while it is still unowned and schema-less.</div>
+
+  <h2 id="t-multiformat">Tutorial 8 &mdash; Multi-format payloads, round-trip <span class="pill">v2.0</span></h2>
+  <table>
+    <tr><th>TYPE</th><th>Publish</th><th>Delivered as (Python)</th></tr>
+    <tr><td>json</td><td><code>PUBLISH t {"v":1}</code></td><td><code>dict</code> <code>{"v":1}</code></td></tr>
+    <tr><td>text</td><td><code>PUBLISH TYPE text t hello</code></td><td><code>str</code> <code>"hello"</code></td></tr>
+    <tr><td>xml</td><td><code>PUBLISH TYPE xml t &lt;c/&gt;</code></td><td><code>str</code> <code>"&lt;c/&gt;"</code></td></tr>
+    <tr><td>octet</td><td><code>PUBLISH TYPE octet t &lt;base64&gt;</code></td><td><code>bytes</code> (decoded)</td></tr>
+    <tr><td>pdf</td><td><code>PUBLISH TYPE pdf t &lt;base64&gt;</code></td><td><code>bytes</code> (decoded)</td></tr>
+  </table>
+  <pre><code><span class="cmt"># Delivery echoes the type so the subscriber knows how to decode:</span>
+MESSAGE TYPE octet line-1/firmware iVBORw0KGgo...
+<span class="cmt"># json deliveries omit the tag, so plain subscribers are unaffected:</span>
+MESSAGE sensors/temp {"value":22.5}</code></pre>
+
+  <h2 id="t-errors">Tutorial 9 &mdash; Responses &amp; error handling</h2>
+  <table>
+    <tr><th>Response</th><th>Meaning</th></tr>
+    <tr><td><code>OK Connected as &lt;c&gt; [(session restored)]</code></td><td>session established</td></tr>
+    <tr><td><code>OK Topic created[ with schema]: &lt;t&gt;</code></td><td>CREATE ok</td></tr>
+    <tr><td><code>OK Subscribed to &lt;t&gt;[ with filter]</code></td><td>subscription registered</td></tr>
+    <tr><td><code>OK Filter updated / removed on &lt;t&gt;</code></td><td>predicate mutated in place</td></tr>
+    <tr><td><code>OK Published to &lt;t&gt;</code></td><td>publication accepted</td></tr>
+    <tr><td><code>ERROR Schema validation failed: &lt;detail&gt;</code></td><td>payload rejected at ingress</td></tr>
+    <tr><td><code>ERROR Topic already exists: &lt;t&gt;</code></td><td>CREATE on an owned/schema'd topic</td></tr>
+    <tr><td><code>ERROR No such topic: &lt;t&gt;</code></td><td>discovery query on an unknown topic</td></tr>
+  </table>
+</section>
+
+<!-- ============================ PYTHON SDK ============================ -->
+<section id="python" class="view">
+  <h1>Python SDK</h1>
+  <p class="lead">Zero-dependency client for dashboards, scripts and gateways. Runs on CPython 3.8+ and Raspberry Pi.</p>
+  <pre><code>pip install -e sdk/python        <span class="cmt"># or set PYTHONPATH=sdk/python</span></code></pre>
+
+  <h2>Publisher</h2>
+  <pre><code><span class="kw">from</span> hyqp <span class="kw">import</span> Publisher
+
+<span class="kw">with</span> Publisher(host=<span class="str">"localhost"</span>, port=4444, client_id=<span class="str">"sensor-1"</span>) <span class="kw">as</span> pub:
+    pub.create_topic(<span class="str">"sensors/temp"</span>, schema={
+        <span class="str">"type"</span>:<span class="str">"object"</span>, <span class="str">"required"</span>:[<span class="str">"value"</span>],
+        <span class="str">"properties"</span>:{<span class="str">"value"</span>:{<span class="str">"type"</span>:<span class="str">"number"</span>,<span class="str">"minimum"</span>:-50,<span class="str">"maximum"</span>:100}}})
+    pub.publish(<span class="str">"sensors/temp"</span>, {<span class="str">"value"</span>: 23.5}, qos=1)</code></pre>
+
+  <h2>Subscriber with a value filter</h2>
+  <pre><code><span class="kw">from</span> hyqp <span class="kw">import</span> Subscriber
+
+<span class="kw">def</span> on_msg(topic, payload, qos, mid):
+    print(topic, payload)      <span class="cmt"># dict for JSON, str for text/xml, bytes for octet/pdf</span>
+
+sub = Subscriber(host=<span class="str">"localhost"</span>, port=4444, client_id=<span class="str">"dash"</span>, on_message=on_msg)
+sub.connect()
+sub.subscribe(<span class="str">"sensors/+"</span>, filter={<span class="str">"value"</span>:{<span class="str">"$gt"</span>:30}})
+sub.loop_forever()</code></pre>
+
+  <h2>Multi-format &amp; discovery <span class="pill">v2.0</span></h2>
+  <pre><code>pub.publish_text(<span class="str">"line-1/note"</span>, <span class="str">"calibrated 09:00"</span>)
+pub.publish_xml(<span class="str">"line-1/cfg"</span>, <span class="str">"&lt;cfg ver='4.2.1'/&gt;"</span>)
+pub.publish_bytes(<span class="str">"line-1/firmware"</span>, open(<span class="str">"fw.bin"</span>,<span class="str">"rb"</span>).read())   <span class="cmt"># base64 on the wire</span>
+
+pub.owner(<span class="str">"sensors/temp"</span>)        <span class="cmt"># -&gt; 'sensor-1'</span>
+pub.subscribers(<span class="str">"sensors/temp"</span>)  <span class="cmt"># -&gt; ['dash']</span>
+pub.describe(<span class="str">"sensors/temp"</span>)     <span class="cmt"># -&gt; {'owner':'sensor-1','schema':'yes',...}</span>
+pub.list_topics(<span class="str">"sensors/"</span>)      <span class="cmt"># -&gt; ['sensors/temp', ...]</span></code></pre>
+
+  <h2>API reference (facades)</h2>
+  <table>
+    <tr><th>Method</th><th>Purpose</th></tr>
+    <tr><td><code>connect(timeout=5.0)</code></td><td>open TCP + send CONNECT (returns the OK line)</td></tr>
+    <tr><td><code>create_topic(topic, schema=None)</code></td><td>CREATE, optionally with a JSON Schema dict</td></tr>
+    <tr><td><code>publish(topic, payload, qos=0, retain=False, content_type=None)</code></td><td>publish; dict/list&rarr;JSON, bytes&rarr;octet/base64</td></tr>
+    <tr><td><code>publish_text / publish_xml / publish_bytes / publish_file</code></td><td>typed helpers (v2.0)</td></tr>
+    <tr><td><code>subscribe(topic, callback=None, filter=None)</code></td><td>subscribe with optional per-topic callback &amp; predicate</td></tr>
+    <tr><td><code>unsubscribe(topic)</code></td><td>cancel a subscription</td></tr>
+    <tr><td><code>owner / publishers / subscribers / describe / list_topics</code></td><td>governance &amp; discovery (v2.0)</td></tr>
+    <tr><td><code>loop_forever() / stop() / disconnect()</code></td><td>blocking loop / stop / close</td></tr>
+  </table>
+
+  <h2>Scenario A &mdash; Continuous sensor publisher</h2>
+  <pre><code><span class="kw">import</span> time, random
+<span class="kw">from</span> hyqp <span class="kw">import</span> Publisher
+
+pub = Publisher(host=<span class="str">"localhost"</span>, port=4444, client_id=<span class="str">"sensor-01"</span>)
+pub.connect()
+<span class="kw">try</span>:
+    pub.create_topic(<span class="str">"sensors/temp"</span>, schema={
+        <span class="str">"type"</span>:<span class="str">"object"</span>,<span class="str">"required"</span>:[<span class="str">"value"</span>],
+        <span class="str">"properties"</span>:{<span class="str">"value"</span>:{<span class="str">"type"</span>:<span class="str">"number"</span>,<span class="str">"minimum"</span>:-50,<span class="str">"maximum"</span>:150}}})
+<span class="kw">except</span> Exception:
+    <span class="kw">pass</span>   <span class="cmt"># topic already exists</span>
+
+<span class="kw">while</span> <span class="kw">True</span>:
+    pub.publish(<span class="str">"sensors/temp"</span>, {<span class="str">"value"</span>: round(random.uniform(15,45),1)}, qos=1)
+    time.sleep(2)</code></pre>
+
+  <h2>Scenario B &mdash; Per-topic callbacks + default handler</h2>
+  <pre><code><span class="kw">from</span> hyqp <span class="kw">import</span> Subscriber
+
+<span class="kw">def</span> on_temp(topic, payload, qos, mid): print(<span class="str">"temp"</span>, payload[<span class="str">"value"</span>])
+<span class="kw">def</span> on_any(topic, payload, qos, mid):  print(<span class="str">"other"</span>, topic, payload)
+
+sub = Subscriber(client_id=<span class="str">"dash"</span>, on_message=on_any)   <span class="cmt"># default handler</span>
+sub.connect()
+sub.subscribe(<span class="str">"sensors/temp"</span>, callback=on_temp)            <span class="cmt"># per-topic handler</span>
+sub.subscribe(<span class="str">"sensors/humidity"</span>)                        <span class="cmt"># falls back to on_any</span>
+sub.loop_forever()</code></pre>
+
+  <h2>Scenario C &mdash; Dynamic filter during an incident</h2>
+  <pre><code>sub.subscribe(<span class="str">"sensors/temp"</span>)                              <span class="cmt"># see everything</span>
+sub.subscribe(<span class="str">"sensors/temp"</span>, filter={<span class="str">"value"</span>:{<span class="str">"$gt"</span>:80}})  <span class="cmt"># incident: only hot</span>
+sub.subscribe(<span class="str">"sensors/temp"</span>)                              <span class="cmt"># back to normal (filter removed)</span>
+<span class="cmt"># the connection and any QoS state are preserved across all three</span></code></pre>
+
+  <h2>Scenario D &mdash; Persistent session + lifecycle callbacks</h2>
+  <pre><code><span class="kw">def</span> on_connect(client, resp):    print(<span class="str">"connected:"</span>, resp)
+<span class="kw">def</span> on_disconnect(client, why):  print(<span class="str">"lost:"</span>, why)
+
+sub = Subscriber(client_id=<span class="str">"edge-7"</span>, persistent=<span class="kw">True</span>,
+                 on_message=<span class="kw">lambda</span> t,p,q,m: print(t,p),
+                 on_connect=on_connect, on_disconnect=on_disconnect)
+sub.connect()                       <span class="cmt"># "(session restored)" on reconnect</span>
+sub.subscribe(<span class="str">"factory/regex('line-[0-9]+')/temp"</span>, filter={<span class="str">"celsius"</span>:{<span class="str">"$gt"</span>:50}})
+sub.loop_forever()</code></pre>
+
+  <h2>Scenario E &mdash; Receiving multi-format payloads</h2>
+  <pre><code><span class="kw">def</span> on_msg(topic, payload, qos, mid):
+    <span class="cmt"># payload type reflects the content type automatically:</span>
+    <span class="kw">if</span> isinstance(payload, dict):    handle_json(payload)                <span class="cmt"># json</span>
+    <span class="kw">elif</span> isinstance(payload, bytes): open(<span class="str">"fw.bin"</span>,<span class="str">"wb"</span>).write(payload) <span class="cmt"># octet/pdf</span>
+    <span class="kw">else</span>:                            handle_text(payload)                <span class="cmt"># text/xml (str)</span>
+
+sub = Subscriber(client_id=<span class="str">"fw-watch"</span>, on_message=on_msg); sub.connect()
+sub.subscribe(<span class="str">"line-1/#"</span>)</code></pre>
+
+  <h2>Scenario F &mdash; Error handling</h2>
+  <pre><code><span class="kw">from</span> hyqp <span class="kw">import</span> Publisher, HYQPError
+<span class="kw">try</span>:
+    pub.publish(<span class="str">"sensors/temp"</span>, {<span class="str">"value"</span>: 999})   <span class="cmt"># violates schema maximum</span>
+<span class="kw">except</span> HYQPError <span class="kw">as</span> e:
+    print(<span class="str">"rejected:"</span>, e)   <span class="cmt"># ERROR Schema validation failed: $.value: ...</span></code></pre>
+
+  <div class="note ok">Full runnable examples ship in <code>sdk/python/examples/</code>: <code>pub_example.py</code>, <code>sub_example.py</code>, <code>full_scenario.py</code>, <code>test_regex_filters.py</code>, <code>test_v2_features.py</code> and <code>flagship_smart_factory.py</code>.</div>
+</section>
+
+<!-- ============================ ARDUINO ============================ -->
+<section id="arduino" class="view">
+  <h1>Arduino / ESP32 SDK</h1>
+  <p class="lead">A C++ client for ESP32/ESP8266 endpoints &mdash; zero dependencies beyond the Arduino WiFi stack.</p>
+  <p>Copy <code>sdk/arduino/HYQP</code> into your Arduino <code>libraries/</code> folder (or zip-import it), then:</p>
+
+  <h2>Publisher sketch</h2>
+  <pre><code><span class="kw">#include</span> &lt;WiFi.h&gt;
+<span class="kw">#include</span> &lt;HYQP.h&gt;
+
+HYQPClient client(<span class="str">"192.168.1.10"</span>, 4444, <span class="str">"esp32-1"</span>);
+
+<span class="kw">void</span> setup(){
+  WiFi.begin(<span class="str">"ssid"</span>, <span class="str">"pass"</span>);
+  <span class="kw">while</span>(WiFi.status()!=WL_CONNECTED) delay(300);
+  client.connect();
+  client.createTopic(<span class="str">"sensors/temp"</span>, <span class="str">"{\"type\":\"object\",\"required\":[\"value\"]}"</span>);
+  client.publish(<span class="str">"sensors/temp"</span>, <span class="str">"{\"value\":23.5}"</span>, 1);   <span class="cmt">// QoS 1</span>
+}
+<span class="kw">void</span> loop(){ client.loop(); delay(10); }</code></pre>
+
+  <h2>Subscriber with callback &amp; filter</h2>
+  <pre><code><span class="kw">void</span> onMsg(<span class="kw">const char</span>* topic, <span class="kw">const char</span>* payload, uint8_t qos, <span class="kw">int</span> id){
+  Serial.printf(<span class="str">"%s -&gt; %s\n"</span>, topic, payload);
+}
+<span class="cmt">// in setup():</span>
+client.onMessage(onMsg);
+client.subscribe(<span class="str">"sensors/temp"</span>, <span class="str">"{\"value\":{\"$gt\":30}}"</span>);</code></pre>
+
+  <h2>Multi-format &amp; discovery <span class="pill">v2.0</span></h2>
+  <pre><code>uint8_t blob[] = {0x89,0x50,0x4E,0x47};
+client.publishBytes(<span class="str">"line-1/firmware"</span>, blob, <span class="kw">sizeof</span>(blob));  <span class="cmt">// base64</span>
+client.publishXml(<span class="str">"line-1/cfg"</span>, <span class="str">"&lt;cfg/&gt;"</span>);
+String owner = client.owner(<span class="str">"sensors/temp"</span>);
+String meta  = client.describe(<span class="str">"sensors/temp"</span>);</code></pre>
+
+  <h2>API reference</h2>
+  <table>
+    <tr><th>Method</th><th>Purpose</th></tr>
+    <tr><td><code>connect(bool persistent=false)</code></td><td>connect; <code>true</code> requests a persistent session</td></tr>
+    <tr><td><code>createTopic(topic, schemaJson=nullptr)</code></td><td>CREATE, optional schema string</td></tr>
+    <tr><td><code>publish(topic, payload, qos=0, retain=false)</code></td><td>publish JSON/text</td></tr>
+    <tr><td><code>publishText / publishXml / publishBytes</code></td><td>typed helpers; <code>publishBytes</code> base64-encodes (v2.0)</td></tr>
+    <tr><td><code>subscribe(topic, filterJson=nullptr, cb=nullptr)</code></td><td>subscribe with predicate &amp; per-topic callback</td></tr>
+    <tr><td><code>owner / publishers / subscribers / describe / listTopics</code></td><td>discovery (return <code>String</code>) (v2.0)</td></tr>
+    <tr><td><code>base64Encode / base64Decode</code></td><td>static binary helpers</td></tr>
+    <tr><td><code>loop()</code></td><td>call every iteration of Arduino <code>loop()</code></td></tr>
+  </table>
+  <div class="note">QoS 1/2 acknowledgements are handled automatically inside <code>loop()</code>; just call <code>client.loop()</code> frequently.</div>
+
+  <h2>Scenario A &mdash; Robust publisher with WiFi auto-reconnect</h2>
+  <pre><code><span class="kw">#include</span> &lt;WiFi.h&gt;
+<span class="kw">#include</span> &lt;HYQP.h&gt;
+
+HYQPClient client(<span class="str">"192.168.1.10"</span>, 4444, <span class="str">"esp32-line1"</span>);
+
+<span class="kw">void</span> ensureConnected(){
+  <span class="kw">if</span>(WiFi.status()!=WL_CONNECTED){ WiFi.reconnect(); <span class="kw">return</span>; }
+  <span class="kw">if</span>(!client.isConnected()) client.connect(<span class="kw">true</span>);   <span class="cmt">// persistent session</span>
+}
+
+<span class="kw">void</span> setup(){
+  Serial.begin(115200);
+  WiFi.begin(<span class="str">"ssid"</span>, <span class="str">"pass"</span>);
+  <span class="kw">while</span>(WiFi.status()!=WL_CONNECTED) delay(300);
+  client.connect(<span class="kw">true</span>);
+  client.createTopic(<span class="str">"factory/line-1/temp"</span>,
+    <span class="str">"{\"type\":\"object\",\"required\":[\"value\"],"</span>
+    <span class="str">"\"properties\":{\"value\":{\"type\":\"number\",\"minimum\":-50,\"maximum\":150}}}"</span>);
+}
+
+<span class="kw">unsigned long</span> last=0;
+<span class="kw">void</span> loop(){
+  ensureConnected();
+  client.loop();
+  <span class="kw">if</span>(millis()-last &gt; 2000){
+    last=millis();
+    <span class="kw">char</span> buf[48]; snprintf(buf,<span class="kw">sizeof</span>(buf), <span class="str">"{\"value\":%.1f}"</span>, readTemp());
+    client.publish(<span class="str">"factory/line-1/temp"</span>, buf, 1, <span class="kw">true</span>);  <span class="cmt">// QoS1 + RETAIN</span>
+  }
+}</code></pre>
+
+  <h2>Scenario B &mdash; Subscriber with a value filter</h2>
+  <pre><code><span class="kw">void</span> onTemp(<span class="kw">const char</span>* topic, <span class="kw">const char</span>* payload, uint8_t qos, <span class="kw">int</span> id){
+  Serial.printf(<span class="str">"[%s] %s\n"</span>, topic, payload);
+}
+<span class="cmt">// in setup(), after connect():</span>
+client.subscribe(<span class="str">"factory/regex('line-[0-9]+')/temp"</span>,
+                 <span class="str">"{\"value\":{\"$gt\":50}}"</span>, onTemp);</code></pre>
+
+  <h2>Scenario C &mdash; Sending and decoding binary</h2>
+  <pre><code><span class="cmt">// send a small binary blob (base64 on the wire)</span>
+uint8_t img[] = {0x89,0x50,0x4E,0x47,0x0D,0x0A};
+client.publishBytes(<span class="str">"line-1/snapshot"</span>, img, <span class="kw">sizeof</span>(img));
+
+<span class="cmt">// decode an incoming base64 (octet) payload back to bytes</span>
+uint8_t out[256];
+size_t n = HYQPClient::base64Decode(payload, out, <span class="kw">sizeof</span>(out));</code></pre>
+
+  <h2>Scenario D &mdash; Runtime discovery from the device</h2>
+  <pre><code>Serial.println(client.owner(<span class="str">"factory/line-1/temp"</span>));        <span class="cmt">// "plant-ops"</span>
+Serial.println(client.subscribers(<span class="str">"factory/line-1/temp"</span>));  <span class="cmt">// "dash, alarm"</span>
+Serial.println(client.describe(<span class="str">"factory/line-1/temp"</span>));     <span class="cmt">// full metadata line</span>
+Serial.println(client.listTopics(<span class="str">"factory/"</span>));             <span class="cmt">// comma-separated topics</span></code></pre>
+
+  <div class="note ok">Ready-to-flash examples ship in <code>sdk/arduino/HYQP/examples/</code>: <code>publisher</code>, <code>subscriber</code>, <code>cpu_temp_sensor</code> (real ESP32 sensor + OTA-style RETAIN), <code>regex_filters</code>, <code>full_scenario</code> and <code>governance_multiformat</code> (v2.0).</div>
+</section>
+
+<!-- ============================ IOT WIRING ============================ -->
+<section id="iot" class="view">
+  <h1>IoT Wiring</h1>
+  <p class="lead">From a sensor pin to a governed topic &mdash; on ESP32 and on Raspberry Pi.</p>
+
+  <h2>ESP32 + DHT22 (temperature/humidity)</h2>
+  <table>
+    <tr><th>DHT22 pin</th><th>ESP32 pin</th></tr>
+    <tr><td>VCC</td><td>3V3</td></tr>
+    <tr><td>DATA</td><td>GPIO 4 (10k&#8486; pull-up to 3V3)</td></tr>
+    <tr><td>GND</td><td>GND</td></tr>
+  </table>
+  <pre><code><span class="cmt">// read sensor, then publish a governed JSON reading</span>
+<span class="kw">float</span> t = dht.readTemperature();
+<span class="kw">char</span> buf[48]; snprintf(buf,<span class="kw">sizeof</span>(buf), <span class="str">"{\"value\":%.1f,\"unit\":\"celsius\"}"</span>, t);
+client.publish(<span class="str">"factory/line-1/temp"</span>, buf, 1, <span class="kw">false</span>);   <span class="cmt">// QoS 1</span></code></pre>
+  <div class="note">A ready-to-flash example ships in <code>sdk/arduino/HYQP/examples/cpu_temp_sensor</code> (ESP32 internal temperature sensor, auto-reconnect, QoS 1 + RETAIN).</div>
+
+  <h2>Raspberry Pi gateway</h2>
+  <ol class="steps">
+    <li>Flash Raspberry Pi OS and enable SSH.</li>
+    <li>Copy the SDK: <code>scp -r sdk/python pi@raspberrypi.local:~/hyqp-sdk</code></li>
+    <li>SSH in and run a subscriber that bridges to a dashboard:
+      <pre><code>PYTHONPATH=~/hyqp-sdk python3 sub_example.py</code></pre></li>
+    <li>Auto-start at boot with a <code>systemd</code> unit (see the Python SDK guide PDF for the unit file).</li>
+  </ol>
+  <div class="note ok">The broker itself can also run <i>on</i> the Pi: <code>docker run -d -p 4444:4444 78549/hyqp:v2.0</code> &mdash; it fits in ~80&nbsp;MB resident.</div>
+</section>
+
+<!-- ============================ SCENARIOS ============================ -->
+<section id="scenarios" class="view">
+  <h1>Building Complete Scenarios</h1>
+  <p class="lead">Wire publishers and subscribers into an end-to-end flow. Example: a smart-factory line.</p>
+
+  <h2>1 &middot; Owner creates governed topics</h2>
+  <pre><code><span class="kw">from</span> hyqp <span class="kw">import</span> Publisher
+ops = Publisher(client_id=<span class="str">"plant-ops"</span>); ops.connect()
+<span class="kw">for</span> n <span class="kw">in</span> range(1,4):
+    ops.create_topic(f<span class="str">"factory/line-{n}/temp"</span>, schema={
+        <span class="str">"type"</span>:<span class="str">"object"</span>,<span class="str">"required"</span>:[<span class="str">"celsius"</span>],
+        <span class="str">"properties"</span>:{<span class="str">"celsius"</span>:{<span class="str">"type"</span>:<span class="str">"number"</span>,<span class="str">"minimum"</span>:-50,<span class="str">"maximum"</span>:200}}})</code></pre>
+
+  <h2>2 &middot; Dashboard subscribes to all lines, only hot readings</h2>
+  <pre><code>dash = Subscriber(client_id=<span class="str">"dashboard"</span>, on_message=on_hot); dash.connect()
+dash.subscribe(<span class="str">"factory/regex('line-[0-9]+')/temp"</span>, filter={<span class="str">"celsius"</span>:{<span class="str">"$gt"</span>:50}})</code></pre>
+
+  <h2>3 &middot; Lines publish; one command reaches all of them</h2>
+  <pre><code>line1.publish(<span class="str">"factory/line-1/temp"</span>, {<span class="str">"celsius"</span>:75})         <span class="cmt"># -&gt; dashboard</span>
+ops.publish(<span class="str">"factory/regex('line-[0-9]+')/control"</span>, {<span class="str">"cmd"</span>:<span class="str">"recalibrate"</span>})</code></pre>
+
+  <h2>4 &middot; Operator audits the topic graph at runtime</h2>
+  <pre><code>ops.subscribers(<span class="str">"factory/line-1/temp"</span>)   <span class="cmt"># who is listening?</span>
+ops.describe(<span class="str">"factory/line-1/temp"</span>)      <span class="cmt"># owner, schema, content type, counts</span></code></pre>
+
+  <div class="note ok">A complete, runnable version of this scenario ships in <code>sdk/python/examples/flagship_smart_factory.py</code> &mdash; it exercises all ten HYQP feature groups against a single broker.</div>
+</section>
+
+<!-- ============================ DOCKER ============================ -->
+<section id="docker" class="view">
+  <h1>Docker</h1>
+  <p class="lead">The broker is published on Docker Hub as <a href="https://hub.docker.com/r/78549/hyqp" target="_blank" rel="noopener"><code>78549/hyqp</code></a>.</p>
+
+  <h2>Pull &amp; run</h2>
+  <pre><code>docker pull 78549/hyqp:v2.0
+docker run -d --name hyqp -p 4444:4444 -v hyqp-data:/app/data 78549/hyqp:v2.0</code></pre>
+
+  <h2>docker-compose (broker + MQTT/AMQP for benchmarks)</h2>
+  <pre><code>docker compose up -d        <span class="cmt"># starts hyqp + mosquitto + rabbitmq</span></code></pre>
+
+  <div class="note"><b>What ships in the image:</b> only the <b>broker</b> (the server). Publishers and subscribers are <i>your</i> apps, built with the Python or Arduino/ESP32 SDK; they connect over TCP on port 4444.</div>
+
+  <h3>Image facts</h3>
+  <ul>
+    <li>Two-stage build: JDK 21 to compile &#8594; slim JRE 21 to run (virtual threads enabled).</li>
+    <li>Runs as a non-root user; no third-party layers beyond the JRE.</li>
+    <li>Mount a volume at <code>/app/data</code> to persist retained messages &amp; sessions across restarts.</li>
+  </ul>
+</section>
+
+<!-- ============================ DOWNLOAD ============================ -->
+<section id="download" class="view">
+  <h1>Download &amp; Resources</h1>
+  <div class="grid">
+    <div class="card"><h3>Docker image</h3><p class="mut"><code>docker pull 78549/hyqp:v2.0</code></p><a href="https://hub.docker.com/r/78549/hyqp" target="_blank" rel="noopener">Docker Hub &#8599;</a></div>
+    <div class="card"><h3>Python SDK</h3><p class="mut"><code>sdk/python</code> &mdash; Publisher, Subscriber, discovery &amp; multi-format helpers.</p></div>
+    <div class="card"><h3>Arduino/ESP32 SDK</h3><p class="mut"><code>sdk/arduino/HYQP</code> &mdash; library + examples (DHT, OTA, regex filters).</p></div>
+    <div class="card"><h3>Guides (PDF)</h3><p class="mut">Protocol Specification, Python &amp; ESP32 SDK guides, Reproducibility guide &mdash; in <code>docs/</code>.</p></div>
+  </div>
+
+  <h2>At a glance</h2>
+  <table>
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>Language</td><td>Java 21 (virtual threads), zero runtime dependencies</td></tr>
+    <tr><td>Transport</td><td>TCP, UTF-8 text, newline-delimited (default port 4444)</td></tr>
+    <tr><td>QoS</td><td>0 (at most once), 1 (at least once), 2 (exactly once)</td></tr>
+    <tr><td>Governance <span class="pill">v2.0</span></td><td>ownership, OWNER/PUBLISHERS/SUBSCRIBERS/DESCRIBE/LIST</td></tr>
+    <tr><td>Payloads <span class="pill">v2.0</span></td><td>json, text, xml, octet, pdf (binary base64-framed)</td></tr>
+    <tr><td>License</td><td>open source (see repository)</td></tr>
+  </table>
+</section>
+
+</main>
+
+<footer>
+  HYQP &mdash; Hybrid Query Protocol &middot; Broker image <code>78549/hyqp:v2.0</code> &middot;
+  Built with Java 21 virtual threads &middot; &copy; 2026<br>
+  Designed by <b>Dr. Badr El Khalyly</b>
+</footer>
+
+<script>
+  var views = document.querySelectorAll('.view');
+  var links = document.querySelectorAll('nav a');
+  function show(id){
+    if(!document.getElementById(id)) id = 'home';
+    views.forEach(function(v){ v.classList.toggle('active', v.id === id); });
+    links.forEach(function(a){ a.classList.toggle('active', a.getAttribute('href') === '#'+id); });
+    document.getElementById('nav').classList.remove('open');
+    window.scrollTo(0,0);
+  }
+  window.addEventListener('hashchange', function(){ show(location.hash.slice(1)); });
+  show(location.hash.slice(1) || 'home');
+
+  document.querySelectorAll('pre').forEach(function(pre){
+    var b = document.createElement('button');
+    b.className = 'copy'; b.textContent = 'copy';
+    b.onclick = function(){
+      var txt = pre.querySelector('code').innerText;
+      if(navigator.clipboard) navigator.clipboard.writeText(txt);
+      b.textContent = 'copied'; setTimeout(function(){ b.textContent='copy'; }, 1200);
+    };
+    pre.appendChild(b);
+  });
+</script>
+</body>
+</html>
